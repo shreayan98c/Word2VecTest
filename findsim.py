@@ -3,9 +3,9 @@
 Determine most similar words in terms of their word embeddings.
 """
 # JHU NLP HW2
-# Name: ____________
-# Email: _________@jhu.edu
-# Term: Fall 2021
+# Name: Shreayan Chaudhary
+# Email: schaud31@jhu.edu
+# Term: Fall 2022
 
 from __future__ import annotations
 import argparse
