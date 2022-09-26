@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from integerize import Integerizer   # look at integerize.py for more info
+from integerize import Integerizer  # look at integerize.py for more info
 
 # For type annotations, which enable you to check correctness of your code:
 from typing import List, Optional
@@ -30,8 +30,9 @@ except ImportError:
     print("\nERROR! Try installing Miniconda and activating it.\n")
     raise
 
-
 log = logging.getLogger(Path(__file__).stem)  # The only okay global variable.
+
+
 # Logging is in general a good practice to check the behavior of your code
 # while it's running. Compared to calling `print`, it provides two benefits.
 # - It prints to standard error (stderr), not standard output (stdout) by
@@ -90,6 +91,7 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
+
 class Lexicon:
     """
     Class that manages a lexicon and can compute similarity.
@@ -101,9 +103,13 @@ class Lexicon:
     def __init__(self) -> None:
         """Load information into coupled word-index mapping and embedding matrix."""
         # FINISH THIS FUNCTION
-
         # Store your stuff! Both the word-index mapping and the embedding matrix.
         #
+        self.n_dims = None
+        self.n_words = None
+        self.vocab = None
+        self.word_list = []
+        self.embeddings = []
         # Do something with this size info?
         # PyTorch's th.Tensor objects rely on fixed-size arrays in memory.
         # One of the worst things you can do for efficiency is
@@ -115,13 +121,28 @@ class Lexicon:
     @classmethod
     def from_file(cls, file: Path) -> Lexicon:
         # FINISH THIS FUNCTION
+        word_list = []
+        embeddings = []
 
         with open(file) as f:
             first_line = next(f)  # Peel off the special first line.
+            n_words, n_dims = map(int, first_line.split())
             for line in f:  # All of the other lines are regular.
-                pass  # `pass` is a placeholder. Replace with real code!
+                line = line.replace('\n', '')
+                parse_line = line.split('\t')
+                word = parse_line[0]
+                word_embedding = list(map(float, parse_line[1:]))
+                word_list.append(word)
+                embeddings.append(word_embedding)
 
         lexicon = Lexicon()  # Maybe put args here. Maybe follow Builder pattern.
+        lexicon.n_words = n_words
+        lexicon.n_dims = n_dims
+        lexicon.word_list = word_list
+        vocab = Integerizer(word_list)
+        lexicon.vocab = vocab
+        embeddings = th.Tensor(embeddings)
+        lexicon.embeddings = embeddings
         return lexicon
 
     def find_similar_words(
