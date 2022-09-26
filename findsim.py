@@ -146,11 +146,11 @@ class Lexicon:
         return lexicon
 
     def find_similar_words(
-        self, word: str, *, plus: Optional[str] = None, minus: Optional[str] = None
+            self, word: str, *, plus: Optional[str] = None, minus: Optional[str] = None
     ) -> List[str]:
         """Find most similar words, in terms of embeddings, to a query."""
         # FINISH THIS FUNCTION
-
+        #
         # The star above forces you to use `plus` and `minus` as
         # named arguments. This helps avoid mixups or readability
         # problems where you forget which comes first.
@@ -161,11 +161,42 @@ class Lexicon:
         # use the default value we provided: None.
         if (minus is None) != (plus is None):  # != is the XOR operation!
             raise TypeError("Must include both of `plus` and `minus` or neither.")
+
         # Keep going!
+        word_idx = self.vocab.index(word)
+        plus_word_idx = self.vocab.index(plus)
+        minus_word_idx = self.vocab.index(minus)
+        vector_space = self.embeddings
+        source_word_embedding = self.embeddings[word_idx]
+        resultant_embedding = source_word_embedding
+
+        # if user provides the plus and minus words
+        if plus and minus:
+            if plus not in self.vocab or minus not in self.vocab:
+                raise Exception('Either plus or minus word not found in vocab!')
+
+            plus_word_embedding = self.embeddings[plus_word_idx]
+            minus_word_embedding = self.embeddings[minus_word_idx]
+            resultant_embedding = th.add(th.subtract(source_word_embedding, minus_word_embedding), plus_word_embedding)
+
+        # repeat the array for words and calc the product
+        rpt_resultant_embedding = resultant_embedding.repeat(self.n_words, 1)
+
+        # finding out the cosine similarities
+        cos = nn.CosineSimilarity(dim=1)
+        result = cos(rpt_resultant_embedding, vector_space)
+
         # Be sure that you use fast, batched computations
         # instead of looping over the rows. If you use a loop or a comprehension
         # in this function, you've probably made a mistake.
-        return []
+        most_similar_indices = th.topk(result, 11, largest=True, sorted=True)
+
+        # taking index 1 onwards because 0 index will be for the word itself and we want to ignore that
+        most_similar_words = [self.vocab[idx] for idx in most_similar_indices.indices[1:]]
+
+        print(word, word_idx)
+        print(most_similar_words)
+        return most_similar_words
 
 
 def format_for_printing(word_list: List[str]) -> str:
