@@ -79,9 +79,7 @@ def parse_args() -> argparse.Namespace:
         const=logging.DEBUG,
         default=logging.INFO,
     )
-    verbosity.add_argument(
-        "-q", "--quiet", dest="verbose", action="store_const", const=logging.WARNING
-    )
+    verbosity.add_argument("-q", "--quiet", dest="verbose", action="store_const", const=logging.WARNING)
 
     args = parser.parse_args()
     if not args.embeddings.is_file():
@@ -184,18 +182,16 @@ class Lexicon:
 
         # finding out the cosine similarities
         cos = nn.CosineSimilarity(dim=1)
-        result = cos(rpt_resultant_embedding, vector_space)
+        similarity = cos(rpt_resultant_embedding, vector_space)
 
         # Be sure that you use fast, batched computations
         # instead of looping over the rows. If you use a loop or a comprehension
         # in this function, you've probably made a mistake.
-        most_similar_indices = th.topk(result, 11, largest=True, sorted=True)
+        most_similar_indices = th.topk(similarity, 11, largest=True, sorted=True)
 
-        # taking index 1 onwards because 0 index will be for the word itself and we want to ignore that
+        # taking index 1 onwards because 0 index will be for the word itself, and we want to ignore that
         most_similar_words = [self.vocab[idx] for idx in most_similar_indices.indices[1:]]
 
-        print(word, word_idx)
-        print(most_similar_words)
         return most_similar_words
 
 
@@ -203,16 +199,15 @@ def format_for_printing(word_list: List[str]) -> str:
     # We don't print out the list as-is; the handout
     # asks that you display it in a particular way.
     # FINISH THIS FUNCTION
-    return ""
+    similar_words = ' '.join(word_list)
+    return similar_words
 
 
 def main():
     args = parse_args()
     logging.basicConfig(level=args.verbose)
     lexicon = Lexicon.from_file(args.embeddings)
-    similar_words = lexicon.find_similar_words(
-        args.word, plus=args.plus, minus=args.minus
-    )
+    similar_words = lexicon.find_similar_words(args.word, plus=args.plus, minus=args.minus)
     print(format_for_printing(similar_words))
 
 
