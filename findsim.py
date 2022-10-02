@@ -102,17 +102,18 @@ class Lexicon:
         """Load information into coupled word-index mapping and embedding matrix."""
         # FINISH THIS FUNCTION
         # Store your stuff! Both the word-index mapping and the embedding matrix.
-        #
+
+        # Initializing the Lexicon class variables
         self.n_dims = None
         self.n_words = None
         self.vocab = None
         self.word_list = []
         self.embeddings = []
+
         # Do something with this size info?
         # PyTorch's th.Tensor objects rely on fixed-size arrays in memory.
         # One of the worst things you can do for efficiency is
         # append row-by-row, like you would with a Python list.
-        #
         # Probably make the entire list all at once, then convert to a th.Tensor.
         # Otherwise, make the th.Tensor and overwrite its contents row-by-row.
 
@@ -122,25 +123,25 @@ class Lexicon:
         word_list = []
         embeddings = []
 
+        # reading the file and storing the embeddings and the words
         with open(file) as f:
             first_line = next(f)  # Peel off the special first line.
             n_words, n_dims = map(int, first_line.split())
             for line in f:  # All of the other lines are regular.
-                line = line.replace('\n', '')
+                line = line.strip('\n')
                 parse_line = line.split('\t')
                 word = parse_line[0]
                 word_embedding = list(map(float, parse_line[1:]))
                 word_list.append(word)
                 embeddings.append(word_embedding)
 
+        # creating the lexicon object and assigning values to the class variables
         lexicon = Lexicon()  # Maybe put args here. Maybe follow Builder pattern.
         lexicon.n_words = n_words
         lexicon.n_dims = n_dims
         lexicon.word_list = word_list
-        vocab = Integerizer(word_list)
-        lexicon.vocab = vocab
-        embeddings = th.Tensor(embeddings)
-        lexicon.embeddings = embeddings
+        lexicon.vocab = Integerizer(word_list)
+        lexicon.embeddings = th.Tensor(embeddings)
         return lexicon
 
     def find_similar_words(
@@ -148,11 +149,11 @@ class Lexicon:
     ) -> List[str]:
         """Find most similar words, in terms of embeddings, to a query."""
         # FINISH THIS FUNCTION
-        #
+
         # The star above forces you to use `plus` and `minus` as
         # named arguments. This helps avoid mixups or readability
         # problems where you forget which comes first.
-        #
+
         # We've also given `plus` and `minus` the type annotation
         # Optional[str]. This means that the argument may be None, or
         # it may be a string. If you don't provide these, it'll automatically
@@ -162,8 +163,6 @@ class Lexicon:
 
         # Keep going!
         word_idx = self.vocab.index(word)
-        plus_word_idx = self.vocab.index(plus)
-        minus_word_idx = self.vocab.index(minus)
         vector_space = self.embeddings
         source_word_embedding = self.embeddings[word_idx]
         resultant_embedding = source_word_embedding
@@ -172,7 +171,8 @@ class Lexicon:
         if plus and minus:
             if plus not in self.vocab or minus not in self.vocab:
                 raise Exception('Either plus or minus word not found in vocab!')
-
+            plus_word_idx = self.vocab.index(plus)
+            minus_word_idx = self.vocab.index(minus)
             plus_word_embedding = self.embeddings[plus_word_idx]
             minus_word_embedding = self.embeddings[minus_word_idx]
             resultant_embedding = th.add(th.subtract(source_word_embedding, minus_word_embedding), plus_word_embedding)
@@ -187,10 +187,24 @@ class Lexicon:
         # Be sure that you use fast, batched computations
         # instead of looping over the rows. If you use a loop or a comprehension
         # in this function, you've probably made a mistake.
-        most_similar_indices = th.topk(similarity, 11, largest=True, sorted=True)
 
-        # taking index 1 onwards because 0 index will be for the word itself, and we want to ignore that
-        most_similar_words = [self.vocab[idx] for idx in most_similar_indices.indices[1:]]
+        # if user provides the plus and minus words, the most similar words will be handled differently
+        if plus and minus:
+            # if user has provided any plus or minus, return the 10 most similar words after removing the plus and
+            # minus words from them
+            most_similar_indices = th.topk(similarity, 13, largest=True, sorted=True)
+
+            # index 0 will be the word given by the user and indexes 1-13 might contain the plus and the minus word
+            # so we need to remove them
+            most_similar_words = [self.vocab[idx] for idx in most_similar_indices.indices[1:] if
+                                  (idx != plus_word_idx and idx != minus_word_idx)][:10]
+
+        else:
+            # if user hasn't provided any plus or minus, just return the 10 most similar words
+            most_similar_indices = th.topk(similarity, 11, largest=True, sorted=True)
+
+            # taking index 1 onwards because 0 index will be for the word itself, and we want to ignore that
+            most_similar_words = [self.vocab[idx] for idx in most_similar_indices.indices[1:]][:10]
 
         return most_similar_words
 
